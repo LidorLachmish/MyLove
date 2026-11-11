@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ללב שלי</title>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      background: #f3f7fb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Heebo', Arial, sans-serif;
+      padding: 1.8rem;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle at 20% 35%, rgba(120, 170, 230, 0.45) 1.8%, transparent 2%),
+                        radial-gradient(circle at 75% 80%, rgba(240, 200, 110, 0.4) 1.5%, transparent 1.8%);
+      background-size: 50px 50px, 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .stage {
+      position: relative;
+      width: min(920px, 96vw);
+      height: min(700px, 85vh);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    /* ===== מעטפה כחולה-כהה ===== */
+    .envelope {
+      position: relative;
+      width: min(470px, 78vw);
+      aspect-ratio: 1.45 / 1;
+      background: linear-gradient(145deg, #2c4f80, #14294b);
+      border-radius: 32px 32px 26px 26px;
+      box-shadow: 0 28px 50px -18px rgba(15, 35, 70, 0.5),
+                  0 0 0 3px rgba(240, 210, 140, 0.35),
+                  inset 0 1px 4px rgba(200, 225, 255, 0.45);
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 0.35s cubic-bezier(0.2, 0.9, 0.4, 1.1), box-shadow 0.3s, opacity 0.4s;
+      transform-style: preserve-3d;
+    }
+    .envelope:hover { transform: translateY(-6px); box-shadow: 0 38px 55px -18px rgba(10, 25, 55, 0.7); }
+
+    .flap {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, #3a62a0, #1d3a68);
+      border-radius: 32px 32px 26px 26px;
+      clip-path: polygon(0% 0%, 100% 0%, 50% 54%);
+      z-index: 5;
+      transform-origin: top center;
+      transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1);
+      box-shadow: inset 0 5px 14px rgba(0, 0, 0, 0.1);
+    }
+
+    .wax-seal {
+      position: absolute;
+      bottom: 18%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 58px;
+      height: 58px;
+      background: radial-gradient(circle at 40% 35%, #f3d98f, #b8892f);
+      border-radius: 50%;
+      z-index: 12;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 4px rgba(255, 245, 210, 0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.45s ease;
+      pointer-events: none;
+    }
+    .wax-seal::after { content: "⭐"; font-size: 30px; }
+
+    .envelope.open { transform: translateY(-8px) scale(0.97); }
+    .envelope.open .flap { transform: rotateX(-180deg); }
+    .envelope.open .wax-seal { opacity: 0; transform: translateX(-50%) scale(0.2); transition: 0.4s; }
+
+    .envelope.hidden-env { opacity: 0; pointer-events: none; transform: scale(0.92); transition: opacity 0.5s ease, transform 0.5s; }
+    .envelope.reset-env { opacity: 1; pointer-events: auto; transform: scale(1) translateY(0); transition: opacity 0.5s ease, transform 0.4s ease; }
+
+    /* ===== קלף המכתב ===== */
+    .letter-panel {
+      position: absolute;
+      width: min(760px, 92vw);
+      height: min(620px, 78vh);
+      background: linear-gradient(135deg, #ffffff, #f5f9fe);
+      border-radius: 20px 38px 38px 38px;
+      box-shadow: 0 45px 70px -28px rgba(15, 35, 70, 0.35),
+                  inset 0 0 0 1px rgba(130, 170, 220, 0.7),
+                  0 0 0 12px rgba(44, 79, 128, 0.08);
+      padding: 2rem 2rem 1.6rem;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      transform: scale(0.96) translateY(40px);
+      transition: opacity 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.1), transform 0.55s ease-out;
+      pointer-events: none;
+    }
+    .letter-panel.visible { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
+    .letter-panel.hiding { opacity: 0; transform: scale(0.96) translateY(20px); transition: opacity 0.5s ease, transform 0.4s ease; pointer-events: none; }
+
+    .letter-header {
+      text-align: center;
+      border-bottom: 2px solid #d6e4f2;
+      padding-bottom: 0.6rem;
+      margin-bottom: 1rem;
+      position: relative;
+    }
+    .letter-header::after {
+      content: "✦";
+      position: absolute;
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1rem;
+      color: #d4a647;
+      background: white;
+      padding: 0 10px;
+    }
+
+    .greeting {
+      font-size: clamp(2rem, 6vw, 3rem);
+      font-weight: 800;
+      color: #2f5d94;
+      letter-spacing: 1px;
+    }
+    .sub-greeting { font-size: 1.05rem; color: #6f95c2; margin-top: 2px; font-weight: 400; }
+
+    .scroll-content { flex: 1; overflow-y: auto; padding: 0.3rem 0.6rem; margin: 0.6rem 0 0.2rem; scroll-behavior: smooth; }
+    .scroll-content::-webkit-scrollbar { width: 4px; background: #e6eff8; border-radius: 20px; }
+    .scroll-content::-webkit-scrollbar-thumb { background: #a9c4e2; border-radius: 20px; }
+
+    #romanticMsg, #romanticMsg span, .line, .line span {
+      font-size: 1.9rem !important;
+      font-weight: 600 !important;
+      color: #1f3a5f;
+      line-height: 1.5;
+    }
+    @media (max-width: 600px) {
+      #romanticMsg, #romanticMsg span, .line, .line span { font-size: 1.45rem !important; }
+    }
+    @media (min-width: 1200px) {
+      #romanticMsg, #romanticMsg span, .line, .line span { font-size: 2.2rem !important; }
+    }
+
+    .line { margin-bottom: 0.8em; opacity: 0; transform: translateY(8px); animation: fadeInUp 0.55s forwards; }
+    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
+
+    .btn-next {
+      background: rgba(230, 240, 252, 0.95);
+      border: 1.5px solid #b5cde8;
+      padding: 0.5rem 2rem;
+      border-radius: 60px;
+      font-family: 'Heebo', Arial, sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #2f5d94;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.25s;
+      width: fit-content;
+      margin: 0.6rem auto 0.2rem;
+    }
+    .btn-next:hover { background: #d9e8f8; border-color: #8fb2da; color: #1f4a7d; transform: scale(0.98); box-shadow: 0 4px 14px rgba(30, 70, 120, 0.15); }
+    .btn-next:active { transform: scale(0.96); }
+
+    .whisper { text-align: center; font-size: 0.95rem; margin-top: 8px; color: #7fa3cc; font-weight: 400; }
+
+    /* כפתור קול */
+    .sound-toggle {
+      position: fixed;
+      top: calc(14px + env(safe-area-inset-top, 0px));
+      left: 14px;
+      z-index: 1000;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      border: 1.5px solid #b5cde8;
+      background: rgba(255, 255, 255, 0.92);
+      color: #2f5d94;
+      font-size: 1.4rem;
+      cursor: pointer;
+      touch-action: manipulation;
+      box-shadow: 0 4px 14px rgba(30, 70, 120, 0.18);
+      transition: transform 0.2s, background 0.2s;
+    }
+    .sound-toggle:hover { background: #e6f0fb; transform: scale(1.06); }
+    .sound-toggle.off { color: #9aa9bb; background: #eef2f6; }
+
+    /* ניצוצות זהובים */
+    .sparkle-love {
+      position: fixed;
+      width: 7px;
+      height: 7px;
+      background: #f6d27a;
+      border-radius: 50%;
+      filter: blur(1px);
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.9;
+      box-shadow: 0 0 15px #e8b84a, 0 0 4px #4a86d6;
+      animation: floatHeartSpark 2s ease-out forwards;
+    }
+    @keyframes floatHeartSpark {
+      0% { transform: scale(0.2) translateY(0); opacity: 0; }
+      25% { transform: scale(1.2) translateY(-6px); opacity: 1; }
+      100% { transform: scale(0.5) translateY(-55px) translateX(var(--dx, 20px)); opacity: 0; }
+    }
+
+    @media (max-width: 600px) {
+      .letter-panel { padding: 1.3rem; }
+      .btn-next { font-size: 1.1rem; padding: 0.4rem 1.3rem; }
+      .greeting { font-size: 2rem; }
+      .whisper { font-size: 0.85rem; }
+    }
+  </style>
+</head>
+<body>
+<button class="sound-toggle" id="soundToggle" aria-label="הפעלה/השתקה של הקראה" title="הקראה בקול">🔊</button>
+
+<div class="stage">
+  <div class="envelope" id="premiumEnvelope">
+    <div class="flap"></div>
+    <div class="wax-seal"></div>
+  </div>
+
+  <div class="letter-panel" id="letterPanel">
+    <div class="letter-header">
+      <div class="greeting">ללב שלי</div>
+      <div class="sub-greeting">∞ כמה מילים מהלב ∞</div>
+    </div>
+    <div class="scroll-content">
+      <div id="romanticMsg"></div>
+    </div>
+    <button class="btn-next" id="nextBtnLove">המשפט הבא</button>
+    <div class="whisper">⁕ 💙 אהבה שלי לנצח ⁕</div>
+  </div>
+</div>
+
+<script>
+  (function() {
+
+const loveTexts = [
+  "אורקי הלב שלי, אהובה שלי,",
+
+  "לפעמים אני מנסה למצוא את המילים הנכונות כדי להסביר לך מה את בשבילי, איך נכנסת לחיים שלי והפכת להיות כל כך הרבה יותר ממה שאי פעם יכולתי לדמיין. כשנפגשנו לראשונה, לא היה לי מושג שיום אחד תהיי האדם שהלב שלי יחפש בכל רגע, הקול שארצה לשמוע בסוף כל יום, המחשבה שתלווה אותי גם כשאני עסוק בדברים אחרים, והאישה שיהיה לי קשה לדמיין את החיים שלי בלעדיה. לא ראיתי אותך מגיעה, לא תכננתי להתאהב ככה, אבל הלב שלי כנראה ידע משהו שאני עדיין לא הבנתי. כי מהרגע שנכנסת לחיי, משהו בי השתנה. נגעת במקומות בתוכי שאפילו לא ידעתי שקיימים, ובלי להתאמץ תפסת את תשומת הלב שלי.",
+
+  "עצם הידיעה שאת מתקיימת בחיי מספיקה לי להיות מאושר. בכל פעם שאנחנו ביחד, החיים מרגישים קצת יותר קלים, קצת פחות מורכבים. כשאני מסתכל על הרגעים האהובים עליי, אני מגלה שרבים מהם הם פשוט רגעים שבהם היית לצדי. רגעים קטנים, יומיומיים, שאולי מבחינתך לא היו מיוחדים בכלל, אבל בשבילי הפכו לזיכרונות שיושבים לי עמוק בלב. את כנראה אפילו לא מבינה כמה ימים רגילים הפכת לימים טובים יותר רק בזכות זה שהיית בהם.",
+
+  "ואני רוצה שתביני עוד משהו, אהובה שלי: אני לא רוצה שתצטרכי לנחש אם את חשובה לי. אני לא רוצה שתצטרכי לחפש סימנים לאהבה שלי או לתהות אם אני חושב עלייך. אני רוצה שתדעי את זה גם כשאני לא אומר, גם כשאנחנו רחוקים, וגם ברגעים שבהם היום עמוס והחיים לא מאפשרים לנו להיות יחד.",
+
+  "יש לי מאין תחושה כזאת של להסתכל על הטלפון ולחכות להודעה ממך מרוב געגוע אליך, אבל גם לא לשלוח עוד הודעה כי אני לא רוצה להרגיש שאני מכריח אותך לדבר. אז מניח את הטלפון לידי כמעט  ומעמיד פנים שאני עסוק, להמשיך לעבוד, לאכול, לראות משהו, אבל בכל פעם שהמסך נדלק הלב מקווה שזאת הודעה או סימן ממך. יש כל כך הרבה דברים קטנים שבאלי לספר לך, משהו מצחיק שקרה, מחשבה שעברה בראש, שאלה פשוטה על איך עבר היום, געגוע קטן שרוצה לצאת החוצה. ובכל זאת לפעמים עוצר את עצמי, כי לא רוצה שהאהבה שלנו תרגיש כמו לחץ, שהגעגוע שלנו ירגיש כמו דרישה, או שהרצון להיות קרובים ייראה כאילו אנחנו מבקשים יותר מדי.",
+
+  " אני רוצה שנוכל להיות אנחנו, בלי משחקים, בלי פחד להראות חולשה ובלי לחשוש שהלב שלנו גדול מדי. אני רוצה להיות האדם שאיתו את יכולה לדבר על הכול, גם על הדברים הקטנים ביותר וגם על הדברים שהכי קשה לך להוציא מהלב. אני רוצה להקשיב לך בלי לשפוט, להבין אותך גם כשקשה לך להסביר, לחבק אותך גם כשאין לי פתרון, ולתת לך את הביטחון שאת אף פעם לא צריכה להתמודד עם הרגשות שלך לבד.",
+
+  "וגם אם אגיד לך אלף פעמים שאני אוהב אותך, גם אז זה לא יספיק. ולא מפני שהמילים האלה מאבדות מהמשמעות שלהן, אלא מפני שבכל פעם שאני אומר אותן אני מתכוון לעוד משהו. אני אוהב אותך על הדרך שבה את הופכת רגעים רגילים למיוחדים. אני אוהב אותך על הנוכחות שלך שנשארת איתי גם אחרי שאת כבר לא לידי. אני אוהב אותך על התחושה שאת מעניקה לי, על השקט שאת מכניסה ללב שלי, על החיוך שאת מצליחה להעלות בי גם מרחוק, ועל כך שמצאתי בך משהו שלא ידעתי כמה הייתי זקוק לו.",
+
+  "ואולי יום אחד ייגמרו לי הדרכים השונות לומר לך כמה אני אוהב אותך, אבל לעולם לא ייגמרו לי הסיבות. לכן, אם אומר לך אלף פעמים שאני אוהב אותך, אל תספרי את המילים. תספרי את הפעמים והזמן שבחרתי בך, את הפעמים שבהן חשבתי עלייך גם כשלא היית לידי, את הפעמים שבהן רציתי לשתף אותך במשהו קטן, את הפעמים שבהן דאגתי לך, התגעגעתי אלייך, התפללתי שיהיה לך טוב, ואת כל הפעמים שבהן הלב שלי ידע שאת האישה שאני רוצה לצדו.",
+
+  "אני לא רוצה לאהוב אותך רק כשהכול קל, נוח ומסתדר. אני רוצה לאהוב אותך כי אני בוחר בך. כי זאת הבחירה של הלב שלי. אני אוהב כל חלק בך, גם את החלקים שאת אולי מתקשה לאהוב בעצמך. את החוזקות שלך ואת החולשות שלך, את החיוכים שלך ואת הדמעות, את הימים שבהם את מרגישה שאת יכולה לכבוש את העולם ואת הימים שבהם אפילו לקום בבוקר מרגיש כמו מאבק.",
+
+  "אני לא מחפש אותך מושלמת, אני רוצה אותך אמיתית. אני רוצה את הרגעים היפים ואת הרגעים המבולגנים, את השיחות הארוכות ואת השתיקות, את הצחוק ואת הדמעות, את הימים שבהם הכול זורם ואת אלה שבהם נצטרך לעצור, לנשום ולמצוא מחדש את הדרך אחד אל השנייה.",
+
+  "אני רוצה להחזיק אותך כשנדמה שהעולם כולו מתפרק. אני רוצה להיות זה שיזכיר לך כמה את חזקה גם כשאת שוכחת את זה בעצמך. אני רוצה לעמוד לצידך ברגעים הטובים ביותר שלך, למחוא לך כפיים על כל הצלחה, קטנה או גדולה, ולהיות שם גם ברגעים שבהם את מרגישה שהכול קשה מדי. אני רוצה לחגוג איתך כשהכוכבים מסתדרים, אבל גם לשבת איתך בסבלנות עד שהם יסתדרו. אני רוצה להילחם עלינו כשצריך, לא מתוך פחד לאבד, אלא מתוך הידיעה שיש דברים יקרים כל כך ששווה להשקיע בהם את כל הלב.",
+
+  "אני מבטיח לך שאשתדל לשמור על הלב שלך כפי שאני רוצה שתשמרי על שלי. להיות עדין איתך גם כשקשה, להקשיב גם כשאנחנו לא מסכימים, לדעת לבקש סליחה כשאני טועה, ולזכור תמיד שמעבר לכל ויכוח, לכל קושי ולכל יום פחות טוב, עומדת מולי האישה שאני אוהב. אני לא מבטיח שלא יהיו לנו רגעים מורכבים, אבל אני כן רוצה להבטיח לך שלא אתן לקשיים לגרום לי לשכוח כמה את נדירה ויקרה לי.",
+
+  "ואם יום אחד הכול ירגיש לך כבד, אם תרגישי שהכוחות שלך נגמרים, אם העולם ייראה כאילו הוא מתפרק סביבך, אני רוצה שתזכרי דבר אחד: את לא לבד. את לא צריכה להיות חזקה בכל רגע, את לא צריכה להסתיר ממני את הכאב שלך, ואת לא צריכה לעבור שום סערה לבד רק כדי להוכיח שאת מסוגלת. תני לי להיות שם. תני לי להחזיק לך את היד, להקשיב, לחבק, ולעזור לך לשאת את מה שכבד לך. גם אם לא תמיד אדע למצוא את המילים הנכונות, אני רוצה שהלב שלך יידע שיש לך מקום בטוח אצלי.",
+
+  "ולמרות שהמרחק לפעמים מפריד בינינו, הוא לעולם לא יוכל לשנות את המקום שלך בתוכי. אני יודע שלא תמיד אני יכול להיות לידך, לראות אותך בכל יום, לחבק אותך כשאת עייפה או להחזיק לך את היד כשאת זקוקה לזה. לפעמים המרחק הזה מרגיש כבד, במיוחד ברגעים שבהם כל מה שאני רוצה הוא פשוט להיות קרוב אלייך. אבל תדעי שגם בימים שבהם אני לא יכול לראות אותך, את נמצאת איתי. במחשבות שלי, בתפילות שלי, בדאגה שלי ובכל תקווה קטנה שיהיה לך טוב.",
+
+  "אבל אני דורש דבר אחד! אני רוצה שתשמרי על עצמך בשבילך, אהובה שלי. תאכלי בזמן, תדאגי לישון כמו שצריך, אל תעמיסי על עצמך יותר מדי ואל תתני לדאגות לגזול ממך את השקט. הלוואי שיכולתי להיות שם כדי להגן עלייך מכל כאב קטן, להכין לך משהו כשאת עייפה, לחבק אותך כשאת צריכה מנוחה ולראות במו עיניי שאת בסדר. עד שיגיע היום שבו אוכל להיות קרוב אלייך יותר, אני רוצה שתזכרי שהלב שלי איתך גם כשאני רחוק.",
+
+  "את לא רק מישהי מיוחדת עבורי. את לא רק אהבה, את גם השקט שלי, השמחה שלי, האדם שאני רוצה לחלוק איתו את הדברים הקטנים והגדולים של החיים. את המחשבה שמלווה אותי באמצע היום, הגעגוע שמופיע בלי התראה. אז אני לא מבקש רגעים מושלמים, אני מבקש חיים אמיתיים איתך. כאלה שיש בהם צחוק עד שכואבת הבטן, שיחות עד השעות הקטנות, חיבוקים שלא רוצים להסתיים, התגברות משותפת על קשיים, חלומות שנבנים לאט וזיכרונות שניצור יחד. אני רוצה להיות לצידך בכל הגרסאות שלך, בכל התקופות שלך, בכל השינויים שהחיים יביאו איתם. אני רוצה להכיר אותך לעומק, להבין אותך, ללמוד אותך שוב ושוב, ולגלות בכל יום עוד סיבה לבחור בך. אני רוצה שתהיי חופשייה להיות את, בלי לפחד.",
+
+  "אני רוצה שתדעי כמה נדירה את בעיניי. כמה אני מעריך אותך, כמה אני גאה בך, כמה אני מאושר על כך שהדרכים שלנו נפגשו. אם הייתי יכול לכתוב את הנשמה שלי על דף, כל עמוד היה נושא את השם שלך. ואם הייתי יכול להראות לך לרגע אחד את כל מה שהלב שלי מרגיש כשאני חושב עלייך, אולי היית מבינה שאין באמת מילים שיכולות להכיל את כל האהבה הזאת.",
+
+  "אז אני לא מבטיח לך אהבה שתסתכם במילים יפות. אני רוצה להעניק לך אהבה שתוכלי להרגיש במעשים, בנוכחות, בסבלנות, בדאגה, בנאמנות ובבחירה היומיומית שלי בך. אהבה שלא נעלמת כשהיום קשה, שלא מתרחקת כשהדרך מתארכת, ושלא שוכחת להעריך אותך גם בתוך השגרה.",
+
+  "אורי שלי, את לא רק חלק מהחיים שלי. הפכת להיות חלק עמוק ממי שאני. ואני רוצה להמשיך לכתוב איתך את הסיפור שלנו, לא כסיפור מושלם שאין בו טעויות, אלא כסיפור אמיתי שיש בו שני לבבות שבוחרים זה בזו שוב ושוב.",
+
+  "אני אוהב אותך עמוק, בכנות, בלי מסכות ועם כל הלב שלי. אני אוהב אותך בימים שבהם את קרובה אליי ובימים שבהם אני מתגעגע אלייך, ברגעים שבהם הכול קל וברגעים שבהם נצטרך להזכיר לעצמנו למה אנחנו כאן.",
+
+  "ואם תשאלי אותי למה דווקא את, כנראה שלעולם לא אצליח לתת לך תשובה שתהיה גדולה מספיק בשביל להסביר את זה. אני רק יודע שמאז שנכנסת לחיי, משהו בי מצא מקום שלא ידע שהוא מחפש.",
+
+  "את הבחירה שלי, הגעגוע שלי, השקט שלי והאהבה שלי.",
+
+  "ואני מקווה שלעולם לא תצטרכי לתהות אם את חשובה לי, כי כל עוד הלב שלי פועם, אני רוצה שהוא ימשיך להזכיר לך דבר אחד:",
+
+  "שאני בוחר בך, אוריקי שלי. לא רק היום, לא רק כשהכול יפה וקל, אלא בכל יום מחדש.",
+
+  "אני אוהב אותך יותר ממה שמילים יוכלו אי פעם להסביר. ❤️"
+];
+
+    const FINAL_BTN = 'באהבה, שאי אפשר לתאר';
+    const RESTART_BTN = 'לקריאה מחדש';
+    const NEXT_BTN = 'למשפט הבא';
+
+    // ===== הקראה (Web Speech API – חינמי, מובנה בדפדפן) =====
+    const synth = window.speechSynthesis || null;
+    let hebVoice = null;
+    let soundOn = true;
+
+    function pickVoice() {
+      if (!synth) return;
+      const voices = synth.getVoices();
+      hebVoice = voices.find(v => /^he/i.test(v.lang)) ||
+                 voices.find(v => /hebrew|עברית|carmit/i.test(v.name)) || null;
+    }
+    if (synth) {
+      pickVoice();
+      synth.onvoiceschanged = pickVoice;
+    }
+
+    // "פתיחת נעילה" של הקול בלחיצה ראשונה (חשוב לאייפון/סאפרי)
+    function unlockSpeech() {
+      if (!synth) return;
+      const u = new SpeechSynthesisUtterance(' ');
+      u.volume = 0;
+      synth.speak(u);
+    }
+
+    function speak(text) {
+      return new Promise(resolve => {
+        if (!synth || !soundOn) return resolve();
+        synth.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'he-IL';
+        if (hebVoice) u.voice = hebVoice;
+        u.rate = 0.88;
+        u.pitch = 1;
+        let done = false;
+        const finish = () => { if (!done) { done = true; clearTimeout(timer); resolve(); } };
+        const timer = setTimeout(finish, text.length * 180 + 2500); // גיבוי אם onend לא מופעל
+        u.onend = finish;
+        u.onerror = finish;
+        synth.speak(u);
+      });
+    }
+
+    const soundBtn = document.getElementById('soundToggle');
+    if (!synth) soundBtn.style.display = 'none';
+    soundBtn.addEventListener('click', () => {
+      soundOn = !soundOn;
+      soundBtn.textContent = soundOn ? '🔊' : '🔇';
+      soundBtn.classList.toggle('off', !soundOn);
+      if (!soundOn && synth) synth.cancel();
+    });
+
+    // ===== אלמנטים =====
+    const envelope = document.getElementById('premiumEnvelope');
+    const panel = document.getElementById('letterPanel');
+    const msgBox = document.getElementById('romanticMsg');
+    const nextButton = document.getElementById('nextBtnLove');
+
+    let currentLine = 0;
+    let isOpen = false;
+    let isTyping = false;
+    let isFinished = false;
+    let isClosing = false;
+
+    function createSparkle() {
+      const spark = document.createElement('div');
+      spark.className = 'sparkle-love';
+      spark.style.left = Math.random() * window.innerWidth + 'px';
+      spark.style.top = Math.random() * window.innerHeight * 0.7 + window.innerHeight * 0.15 + 'px';
+      spark.style.setProperty('--dx', (Math.random() - 0.5) * 70 + 'px');
+      document.body.appendChild(spark);
+      setTimeout(() => spark.remove(), 2000);
+    }
+    function sparkleBurst(count = 2) {
+      for (let i = 0; i < count; i++) setTimeout(createSparkle, i * 90);
+    }
+
+    function typeLoveText(text, element) {
+      return new Promise(resolve => {
+        let pos = 0;
+        element.textContent = '';
+        function addChar() {
+          if (pos < text.length) {
+            element.textContent += text[pos];
+            pos++;
+            if (text[pos] === ' ' || text[pos] === ',' || Math.random() > 0.88) sparkleBurst(1);
+            setTimeout(addChar, 55);
+          } else resolve();
+        }
+        addChar();
+      });
+    }
+
+    async function showNextLine() {
+      if (isTyping || isClosing) return;
+      if (isFinished) { await closeLetterAndReset(); return; }
+
+      isTyping = true;
+      const lineDiv = document.createElement('div');
+      lineDiv.className = 'line';
+      const span = document.createElement('span');
+      lineDiv.appendChild(span);
+      msgBox.appendChild(lineDiv);
+
+      // מקלידים ומקריאים במקביל, וממתינים ששניהם יסתיימו
+      const text = loveTexts[currentLine];
+      await Promise.all([typeLoveText(text, span), speak(text)]);
+      currentLine++;
+      isTyping = false;
+
+      const scrollArea = document.querySelector('.scroll-content');
+      if (scrollArea) setTimeout(() => scrollArea.scrollTo({ top: scrollArea.scrollHeight, behavior: 'smooth' }), 60);
+
+      if (currentLine === loveTexts.length) {
+        isFinished = true;
+        nextButton.innerHTML = FINAL_BTN;
+        sparkleBurst(5);
+      } else {
+        nextButton.innerHTML = NEXT_BTN;
+      }
+    }
+
+    async function closeLetterAndReset() {
+      if (isClosing) return;
+      isClosing = true;
+      if (synth) synth.cancel();
+
+      panel.classList.remove('visible');
+      panel.classList.add('hiding');
+      sparkleBurst(4);
+
+      setTimeout(() => {
+        msgBox.innerHTML = '';
+        currentLine = 0;
+        isFinished = false;
+        isOpen = false;
+        isTyping = false;
+
+        envelope.classList.remove('hidden-env', 'open');
+        envelope.classList.add('reset-env');
+
+        nextButton.innerHTML = RESTART_BTN;
+        panel.classList.remove('hiding');
+
+        setTimeout(() => envelope.classList.remove('reset-env'), 100);
+        isClosing = false;
+      }, 550);
+    }
+
+    function openEnvelopeMagic() {
+      if (isOpen || isClosing) return;
+      isOpen = true;
+      unlockSpeech();
+      envelope.classList.add('open');
+
+      setTimeout(() => {
+        envelope.classList.add('hidden-env');
+        panel.classList.add('visible');
+        setTimeout(() => {
+          if (currentLine === 0 && !isFinished && !isTyping) showNextLine();
+        }, 180);
+      }, 600);
+    }
+
+    envelope.addEventListener('click', () => {
+      if (!isOpen && !isClosing) openEnvelopeMagic();
+    });
+
+    nextButton.addEventListener('click', () => {
+      if (!isOpen) { openEnvelopeMagic(); return; }
+      if (isTyping || isClosing) return;
+      if (isFinished) closeLetterAndReset();
+      else showNextLine();
+    });
+
+    const observer = new MutationObserver(() => {
+      const scrollDiv = document.querySelector('.scroll-content');
+      if (scrollDiv && panel.classList.contains('visible') && !isClosing) {
+        scrollDiv.scrollTo({ top: scrollDiv.scrollHeight, behavior: 'smooth' });
+      }
+    });
+    observer.observe(msgBox, { childList: true, subtree: true });
+
+    setTimeout(() => { if (!isOpen) sparkleBurst(2); }, 500);
+  })();
+</script>
+</body>
+</html>
